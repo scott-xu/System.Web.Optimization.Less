@@ -1,0 +1,28 @@
+﻿<!DOCTYPE html>
+<html lang="@System.Threading.Thread.CurrentThread.CurrentCulture.ToString()">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+    @Styles.Render("~/Content/bootstrap")<link href="~/Content/bootstrap-datepicker.css" rel="stylesheet" />
+</head>
+<body>
+    @RenderBody()
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    <script src="~/Scripts/jquery.globalize/globalize.js"></script>
+    <script src="~/Scripts/jquery.globalize/cultures/globalize.culture.@(System.Threading.Thread.CurrentThread.CurrentCulture.ToString()).js"></script>
+    <script src="~/Scripts/bootstrap-datepicker.js"></script>
+    <script src="~/Scripts/bootstrap-datepicker-globalize.js"></script>
+    <input type="text" />
+
+    <script>
+        $(function () {
+            $('input').datepicker();
+        });
+    </script>
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>
