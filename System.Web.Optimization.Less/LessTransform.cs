@@ -14,13 +14,13 @@ namespace System.Web.Optimization
     using System.IO;
     using System.Linq;
     using System.Text;
+    using System.Web.Hosting;
     using dotless.Core;
     using dotless.Core.Abstractions;
     using dotless.Core.Importers;
     using dotless.Core.Input;
     using dotless.Core.Loggers;
     using dotless.Core.Parser;
-    using System.Web.Hosting;
 
     /// <summary>
     /// The less transform.
@@ -63,10 +63,21 @@ namespace System.Web.Optimization
             foreach (var bundleFile in bundle.Files)
             {
                 bundleFiles.Add(bundleFile);
+                var filePath = bundleFile.IncludedVirtualPath;
+                filePath = filePath.Replace('\\', '/');
+                if (filePath.StartsWith("~"))
+                {
+                    filePath = VirtualPathUtility.ToAbsolute(filePath);
+                }
 
-                this.SetCurrentFilePath(lessParser, bundleFile.VirtualFile.Name);
-                var source = File.ReadAllText(bundleFile.VirtualFile.Name);
-                content.Append(lessEngine.TransformToCss(source, bundleFile.VirtualFile.Name));
+                if (filePath.StartsWith("/"))
+                {
+                    HostingEnvironment.MapPath(filePath);
+                }
+
+                this.SetCurrentFilePath(lessParser, filePath);
+                var source = File.ReadAllText(filePath);
+                content.Append(lessEngine.TransformToCss(source, filePath));
                 content.AppendLine();
 
                 bundleFiles.AddRange(this.GetFileDependencies(lessParser, bundleFile.VirtualFile));
@@ -101,6 +112,7 @@ namespace System.Web.Optimization
         /// Gets the file dependencies (@imports) of the LESS file being parsed.
         /// </summary>
         /// <param name="lessParser">The LESS parser.</param>
+        /// <param name="virtualFile">The virtual file</param>
         /// <returns>An array of file references to the dependent file references.</returns>
         private IEnumerable<BundleFile> GetFileDependencies(Parser lessParser, VirtualFile virtualFile)
         {
