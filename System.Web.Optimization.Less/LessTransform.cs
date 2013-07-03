@@ -72,7 +72,7 @@ namespace System.Web.Optimization
 
                 if (filePath.StartsWith("/"))
                 {
-                    HostingEnvironment.MapPath(filePath);
+                    filePath = HostingEnvironment.MapPath(filePath);
                 }
 
                 this.SetCurrentFilePath(lessParser, filePath);
