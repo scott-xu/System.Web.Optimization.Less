@@ -76,7 +76,7 @@ namespace System.Web.Optimization
                 }
 
                 this.SetCurrentFilePath(lessParser, filePath);
-                var source = File.ReadAllText(filePath);
+                var source = bundleFile.ApplyTransforms();
                 content.Append(lessEngine.TransformToCss(source, filePath));
                 content.AppendLine();
 
