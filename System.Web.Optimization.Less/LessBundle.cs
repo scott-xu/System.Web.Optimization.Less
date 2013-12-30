@@ -7,12 +7,14 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System.Web.Hosting;
+
 namespace System.Web.Optimization
 {
     /// <summary>
     /// The less bundle.
     /// </summary>
-    public class LessBundle : Bundle
+    public class LessBundle : StyleBundle
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="LessBundle"/> class.
@@ -21,7 +23,7 @@ namespace System.Web.Optimization
         /// The virtual path.
         /// </param>
         public LessBundle(string virtualPath)
-            : base(virtualPath, new IBundleTransform[] { new LessTransform() })
+            : this(virtualPath, null)
         {
         }
 
@@ -35,8 +37,26 @@ namespace System.Web.Optimization
         /// The CDN path.
         /// </param>
         public LessBundle(string virtualPath, string cdnPath)
-            : base(virtualPath, cdnPath, new IBundleTransform[] { new LessTransform() })
+            : base(virtualPath, cdnPath)
         {
+            Transforms.Insert(0, new LessTransform());
+        }
+
+        /// <summary>
+        /// Gets the cache key for the specified bundle context. Takes into account transient files handled by <see cref="VirtualPathProvider"/>.
+        /// </summary>
+        /// <param name="context"><see cref="BundleContext"/> instance.</param>
+        /// <returns>Cache key string.</returns>
+        public override string GetCacheKey(BundleContext context)
+        {
+            var key = base.GetCacheKey(context);
+            var filesKey = this.GetTransientBundleFilesKey(context);
+
+            if (!string.IsNullOrEmpty(filesKey))
+            {
+                key += ":" + filesKey;
+            }
+            return key;
         }
     }
 }

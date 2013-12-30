@@ -1,12 +1,27 @@
-﻿<!DOCTYPE html>
+﻿@using MvcApplication1.BootstrapTheme
+<!DOCTYPE html>
 <html lang="@System.Threading.Thread.CurrentThread.CurrentCulture.ToString()">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>@ViewBag.Title</title>
-    @Styles.Render("~/Content/bootstrap")<link href="~/Content/bootstrap-datepicker.css" rel="stylesheet" />
+@{
+    // check if the bootstrap theme is changed
+    var themeName = Request.Form["themename"];
+    if (!string.IsNullOrEmpty(themeName))
+    {
+        BootstrapThemeVirtualPathProvider.CurrentThemeName = themeName;
+    }
+}
+    @Styles.Render("~/Content/bootstrap")
+    <link href="~/Content/bootstrap-datepicker.css" rel="stylesheet" />
 </head>
 <body>
+    <form method="POST">
+        <header>Theme</header>
+        @Html.DropDownList("themename", Html.GetBootstrapThemeItems())
+    </form>
+
     @RenderBody()
 
     @Scripts.Render("~/bundles/jquery")
@@ -20,9 +35,15 @@
     <script>
         $(function () {
             $('input').datepicker();
+            $('#themename').change(function (e) {
+                $(e.target).closest('form').submit();
+            });
         });
     </script>
 
     @RenderSection("scripts", required: false)
 </body>
+
+
+
 </html>
