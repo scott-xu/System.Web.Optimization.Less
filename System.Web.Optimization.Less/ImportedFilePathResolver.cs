@@ -9,9 +9,6 @@
 
 namespace System.Web.Optimization
 {
-    using System.IO;
-    using System.Web.Hosting;
-
     using dotless.Core.Input;
 
     /// <summary>
@@ -22,46 +19,52 @@ namespace System.Web.Optimization
         /// <summary>
         /// The current file directory.
         /// </summary>
-        private string currentFileDirectory;
-
-        /// <summary>
-        /// The current file path.
-        /// </summary>
-        private string currentFilePath;
+        private string currentDirectory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImportedFilePathResolver"/> class.
         /// </summary>
-        /// <param name="currentFilePath">
-        /// The current file path.
-        /// </param>
-        /// <exception cref="ArgumentNullException">
-        /// current file path should not be null nor empty
-        /// </exception>
-        public ImportedFilePathResolver(string currentFilePath)
+        public ImportedFilePathResolver()
+            : this(HttpRuntime.AppDomainAppVirtualPath)
         {
-            if (string.IsNullOrEmpty(currentFilePath))
-            {
-                throw new ArgumentNullException("currentFilePath");
-            }
+        }
 
-            this.CurrentFilePath = currentFilePath;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ImportedFilePathResolver"/> class.
+        /// </summary>
+        /// <param name="currentDirectory">
+        /// The current app related directory path.
+        /// </param>
+        /// <exception cref="HttpException">
+        /// <paramref name="currentDirectory"/> is not a valid virtual path
+        /// </exception>
+        /// <exception cref="ArgumentNullException">
+        /// <paramref name="currentDirectory"/> is null
+        /// </exception>
+        public ImportedFilePathResolver(string currentDirectory)
+        {
+            this.CurrentDirectory = currentDirectory;
         }
 
         /// <summary>
         /// Gets or sets the path to the currently processed file.
         /// </summary>
-        public string CurrentFilePath
+        /// <exception cref="HttpException">
+        /// <paramref name="value"/> is not a valid virtual path
+        /// </exception>
+        /// <exception cref="ArgumentNullException">
+        /// <paramref name="value"/> is null
+        /// </exception>
+        public string CurrentDirectory
         {
             get
             {
-                return this.currentFilePath;
+                return this.currentDirectory;
             }
 
             set
             {
-                this.currentFilePath = value;
-                this.currentFileDirectory = Path.GetDirectoryName(value);
+                this.currentDirectory = VirtualPathUtility.AppendTrailingSlash(VirtualPathUtility.ToAppRelative(value));
             }
         }
 
@@ -76,18 +79,13 @@ namespace System.Web.Optimization
         /// </returns>
         public string GetFullPath(string filePath)
         {
-            if (filePath.StartsWith("~"))
-            {
-                filePath = VirtualPathUtility.ToAbsolute(filePath);
-            }
-
             if (filePath.StartsWith("/"))
             {
-                filePath = HostingEnvironment.MapPath(filePath);
+                filePath = VirtualPathUtility.ToAppRelative(filePath);
             }
-            else if (!Path.IsPathRooted(filePath))
+            if (!filePath.StartsWith("~"))
             {
-                filePath = Path.GetFullPath(Path.Combine(this.currentFileDirectory, filePath));
+                filePath = VirtualPathUtility.Combine(this.currentDirectory, filePath);
             }
 
             return filePath;

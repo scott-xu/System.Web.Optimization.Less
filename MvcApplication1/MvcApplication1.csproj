@@ -113,6 +113,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BootstrapTheme\HtmlHelperExtensions.cs" />
+    <Compile Include="BootstrapTheme\VirtualPathFile.cs" />
+    <Compile Include="BootstrapTheme\BootstrapThemeVirtualPathProvider.cs" />
     <Compile Include="App_Start\BootstrapBundleConfig.cs" />
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
@@ -180,6 +183,8 @@
     <Content Include="Content\less\bootstrap.less" />
     <Content Include="Content\less\alerts.less" />
     <Content Include="Content\less\accordion.less" />
+    <Content Include="Content\less\variables.dark.less" />
+    <Content Include="Content\less\variables.weird.less" />
     <None Include="Scripts\jquery-2.0.2.intellisense.js" />
     <Content Include="Scripts\jquery-2.0.2.js" />
     <Content Include="Scripts\jquery-2.0.2.min.js" />
