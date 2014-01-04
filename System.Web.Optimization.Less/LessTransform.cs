@@ -54,7 +54,7 @@ namespace System.Web.Optimization
             context.HttpContext.Response.Cache.SetLastModifiedFromFileDependencies();
 
             var lessParser = new Parser();
-            var lessEngine = this.CreateLessEngine(lessParser);
+            var lessEngine = this.CreateLessEngine(lessParser, context);
 
             var content = new StringBuilder(bundle.Content.Length);
 
@@ -99,13 +99,21 @@ namespace System.Web.Optimization
         /// <param name="lessParser">
         /// The LESS parser.
         /// </param>
+        /// <param name="context">
+        /// The bundle context from asp.net    
+        /// </param>
         /// <returns>
         /// The <see cref="ILessEngine"/>.
         /// </returns>
-        private ILessEngine CreateLessEngine(Parser lessParser)
+        private ILessEngine CreateLessEngine(Parser lessParser, BundleContext context)
         {
-            var logger = new AspNetTraceLogger(LogLevel.Debug, new Http());
-            return new LessEngine(lessParser, logger, true, false);
+            Logger logger = new NullLogger(LogLevel.Error);
+            if (context.EnableInstrumentation)
+            {
+                logger = new AspNetTraceLogger(LogLevel.Debug, new Http());
+            }
+
+            return new LessEngine(lessParser, logger, context.EnableOptimizations, false);
         }
 
         /// <summary>
