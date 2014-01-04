@@ -166,13 +166,8 @@ namespace System.Web.Optimization
                 throw new InvalidOperationException("Unexpected dotless importer type.");
             }
 
-            var fileReader = importer.FileReader as FileReader;
-
-            if (fileReader == null || !(fileReader.PathResolver is ImportedFilePathResolver))
-            {
-                fileReader = new FileReader(new ImportedFilePathResolver(currentFilePath));
-                importer.FileReader = fileReader;
-            }
+            var fileReader = new FileReader(new ImportedFilePathResolver(currentFilePath));
+            importer.FileReader = fileReader;
         }
     }
 }
