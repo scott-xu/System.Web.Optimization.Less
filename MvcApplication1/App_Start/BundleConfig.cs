@@ -17,6 +17,11 @@ namespace MvcApplication1
             bundles.Add(new ScriptBundle("~/bundles/modernizr").Include(
                         "~/Scripts/modernizr-*"));
 
+            bundles.Add(new LessBundle("~/bundles/files-from-different-folders-with-imports")
+                .Include("~/content/less-2/layouts.less")
+                .Include("~/content/less/media.less")
+                .Include("~/content/layouts.less"));
+
         }
     }
 }
