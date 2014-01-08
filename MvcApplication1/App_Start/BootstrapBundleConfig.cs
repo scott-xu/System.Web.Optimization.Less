@@ -14,7 +14,7 @@ namespace MvcApplication1.App_Start
 			BundleTable.Bundles.Add(new ScriptBundle("~/bundles/bootstrap").Include("~/Scripts/bootstrap*"));
 			BundleTable.Bundles.Add(new StyleBundle("~/Content/bootstrap").Include("~/Content/bootstrap.css", "~/Content/bootstrap-responsive.css"));
 
-            BundleTable.EnableOptimizations = true;
+            //BundleTable.EnableOptimizations = true;
 		}
 	}
 }
