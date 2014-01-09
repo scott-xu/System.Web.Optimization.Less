@@ -1,12 +1,11 @@
 using System.IO;
-using System.Web.Hosting;
 using dotless.Core.Input;
 
 namespace System.Web.Optimization
 {
     /// <summary>
     ///     Extends <see cref="IFileReader" /> with features required for resolving virtual file
-    ///     related to <see cref="ImportedFilePathResolver.CurrentDirectory" />.
+    ///     related to the current directory set with <see cref="ImportedFilePathResolver.SetCurrentDirectory" />.
     /// </summary>
     public interface IFileReaderWithResolver : IFileReader
     {
@@ -15,12 +14,12 @@ namespace System.Web.Optimization
 
     /// <summary>
     ///     Implements <see cref="IFileReader" /> with <see cref="IFileReaderWithResolver" /> extension required
-    ///     for resolving virtual file related to <see cref="ImportedFilePathResolver.CurrentDirectory" />.
+    ///     for resolving virtual file related to the current directory set with
+    ///     <see cref="ImportedFilePathResolver.SetCurrentDirectory" />.
     /// </summary>
     public class LessVirtualFileReader : IFileReaderWithResolver
     {
-        private ImportedFilePathResolver pathResolver;
-        private VirtualFileReader virtualFileReader;
+        private ImportedFilePathResolver _pathResolver;
 
         public LessVirtualFileReader()
             : this(new ImportedFilePathResolver())
@@ -34,14 +33,14 @@ namespace System.Web.Optimization
 
         public virtual bool DoesFileExist(string fileName)
         {
-            fileName = pathResolver.GetFullPath(fileName);
-            return HostingEnvironment.VirtualPathProvider.FileExists(fileName);
+            fileName = _pathResolver.GetFullPath(fileName);
+            return BundleTable.VirtualPathProvider.FileExists(fileName);
         }
 
         public virtual string GetFileContents(string fileName)
         {
-            fileName = pathResolver.GetFullPath(fileName);
-            using (Stream stream = HostingEnvironment.VirtualPathProvider.GetFile(fileName).Open())
+            fileName = _pathResolver.GetFullPath(fileName);
+            using (Stream stream = BundleTable.VirtualPathProvider.GetFile(fileName).Open())
             {
                 return new StreamReader(stream).ReadToEnd();
             }
@@ -49,8 +48,8 @@ namespace System.Web.Optimization
 
         public virtual byte[] GetBinaryFileContents(string fileName)
         {
-            fileName = pathResolver.GetFullPath(fileName);
-            using (Stream stream = HostingEnvironment.VirtualPathProvider.GetFile(fileName).Open())
+            fileName = _pathResolver.GetFullPath(fileName);
+            using (Stream stream = BundleTable.VirtualPathProvider.GetFile(fileName).Open())
             {
                 return GetBytes(stream);
             }
@@ -88,16 +87,21 @@ namespace System.Web.Optimization
             }
         }
 
+        public bool UseCacheDependencies
+        {
+            get { return false; }
+        }
+
         public ImportedFilePathResolver PathResolver
         {
-            get { return pathResolver; }
+            get { return _pathResolver; }
             set
             {
                 if (value == null)
                 {
                     throw new ArgumentNullException("value");
                 }
-                pathResolver = value;
+                _pathResolver = value;
             }
         }
     }

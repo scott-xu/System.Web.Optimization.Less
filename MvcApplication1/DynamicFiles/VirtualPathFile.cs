@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Web.Hosting;
 
-namespace MvcApplication1.BootstrapTheme
+namespace MvcApplication1.DynamicFiles
 {
     /// <summary>
     ///     Simple <see cref="HostingEnvironment.MapPath" /> based implementation of <see cref="VirtualFile" />.

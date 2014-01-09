@@ -6,9 +6,9 @@ using System.Web.Hosting;
 namespace System.Web.Optimization
 {
     /// <summary>
-    ///     Stores LESS file dependencies. Takes into account transient files handled by <see cref="VirtualPathProvider" />.
+    ///     Stores bundle file dependencies. Takes into account transient files handled by <see cref="VirtualPathProvider" />.
     /// </summary>
-    internal static class LessDependencyCache
+    internal static class DependencyCache
     {
         /// <summary>
         ///     Lists of virtual paths of included files by the root less file cache key or virtual path.
@@ -33,14 +33,14 @@ namespace System.Web.Optimization
         /// <summary>
         ///     Stores file dependency paths, if not saved yet.
         /// </summary>
-        /// <param name="virtualPath">Root LESS file virtual path.</param>
+        /// <param name="virtualPath">Root file virtual path.</param>
         /// <param name="fileDependencies">Included file virtual paths.</param>
         internal static void SaveFileDependencies(string virtualPath, string[] fileDependencies)
         {
-            string fileKey = HostingEnvironment.VirtualPathProvider.GetCacheKey(virtualPath) ?? virtualPath;
+            string fileKey = BundleTable.VirtualPathProvider.GetCacheKey(virtualPath) ?? virtualPath;
             _fileDependencies.TryAdd(fileKey, fileDependencies);
 
-            string complexKey = GetTransientLessFileKey(virtualPath);
+            string complexKey = GetTransientFileKey(virtualPath);
             if (complexKey != fileKey)
             {
                 _fileDependencies.TryAdd(complexKey, fileDependencies);
@@ -48,40 +48,49 @@ namespace System.Web.Optimization
         }
 
         /// <summary>
-        ///     Returns virtual paths of included files in <paramref name="virtualPath" /> LESS file, according to
+        ///     Returns virtual paths of included files in <paramref name="virtualPath" />  file, according to
         ///     <paramref name="context" />.
-        ///     If not added yet, executes <see cref="LessTransform.Process" /> for specified <paramref name="bundle" /> and
+        ///     If not added yet, executes <see cref="Transform.Process" /> for specified <paramref name="bundle" /> and
         ///     ensures the dependencies are saved.
         /// </summary>
         /// <param name="bundle">Bundle to process, if not yet</param>
-        /// <param name="virtualPath">Root LESS file to get dependencies for.</param>
+        /// <param name="virtualPath">Root  file to get dependencies for.</param>
         /// <param name="context">Current context.</param>
         /// <returns>Virtual paths of included files.</returns>
         private static IEnumerable<string> GetFileDependencies(Bundle bundle, string virtualPath, BundleContext context)
         {
-            string key = HostingEnvironment.VirtualPathProvider.GetCacheKey(virtualPath) ?? virtualPath;
+            string key = BundleTable.VirtualPathProvider.GetCacheKey(virtualPath) ?? virtualPath;
 
-            Func<string, IList<string>> process = s =>
+            Func<string, IList<string>> process;
+
+            if (bundle.Transforms.Any(transform => transform is LessTransform))
             {
-                IEnumerable<BundleFile> files = bundle.EnumerateFiles(context);
-                LessTransform.Process(ref files);
-                return files.Select(file => file.IncludedVirtualPath).ToArray();
-            };
+                process = s =>
+                {
+                    IEnumerable<BundleFile> files = bundle.EnumerateFiles(context);
+                    LessTransform.Process(ref files);
+                    return files.Select(file => file.IncludedVirtualPath).ToArray();
+                };
+            }
+            else
+            {
+                process = s => new string[0];
+            }
 
             _fileDependencies.GetOrAdd(key, process);
 
             // returns more specific dependencies by the key containing transient file paths
-            return _fileDependencies.GetOrAdd(GetTransientLessFileKey(virtualPath), process);
+            return _fileDependencies.GetOrAdd(GetTransientFileKey(virtualPath), process);
         }
 
         /// <summary>
         ///     Returns file cache key in respect to <see cref="VirtualPathProvider.GetCacheKey" /> results for all dependencies.
         /// </summary>
-        /// <param name="virtualPath">Root LESS file virtual path.</param>
+        /// <param name="virtualPath">Root  file virtual path.</param>
         /// <returns>File cache key.</returns>
-        private static string GetTransientLessFileKey(string virtualPath)
+        private static string GetTransientFileKey(string virtualPath)
         {
-            string key = HostingEnvironment.VirtualPathProvider.GetCacheKey(virtualPath) ?? virtualPath;
+            string key = BundleTable.VirtualPathProvider.GetCacheKey(virtualPath) ?? virtualPath;
             string dependencyKey = ComposeTransientFilesKey(_fileDependencies[key]);
             if (!string.IsNullOrEmpty(dependencyKey))
             {
@@ -98,7 +107,7 @@ namespace System.Web.Optimization
         /// <returns>Cache key or empty string.</returns>
         private static string ComposeTransientFilesKey(IEnumerable<string> paths)
         {
-            VirtualPathProvider vpp = HostingEnvironment.VirtualPathProvider;
+            VirtualPathProvider vpp = BundleTable.VirtualPathProvider;
             return string.Join(";", paths
                 .Distinct()
                 .Select(vpp.GetCacheKey)

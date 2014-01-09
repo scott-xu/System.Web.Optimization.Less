@@ -1,9 +1,10 @@
-﻿using System.Web;
+﻿using System.Threading;
+using System.Web;
 using System.Web.Hosting;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
-using MvcApplication1.BootstrapTheme;
+using MvcApplication1.DynamicFiles;
 
 namespace MvcApplication1
 {
@@ -17,11 +18,17 @@ namespace MvcApplication1
             AreaRegistration.RegisterAllAreas();
 
             // chain the custom bootstrap theme virtual path provider in HTTP runtime
-            HostingEnvironment.RegisterVirtualPathProvider(new BootstrapThemeVirtualPathProvider());
-            
+            HostingEnvironment.RegisterVirtualPathProvider(new DynamicFileVirtualPathProvider());
+
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+            BundleTable.EnableOptimizations = true;
+        }
+
+        protected void Application_PreRequestHandlerExecute()
+        {
+            Thread.CurrentThread.CurrentCulture = DynamicFileVirtualPathProvider.CurrentCulture;
         }
     }
 }

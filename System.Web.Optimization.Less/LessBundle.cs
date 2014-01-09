@@ -7,56 +7,30 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
-using System.Web.Hosting;
-
 namespace System.Web.Optimization
 {
     /// <summary>
-    /// The less bundle.
+    ///     The less bundle.
     /// </summary>
-    public class LessBundle : StyleBundle
+    public class LessBundle : DynamicBundle
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="LessBundle"/> class.
+        ///     Initializes a new instance of the <see cref="LessBundle" /> class.
         /// </summary>
-        /// <param name="virtualPath">
-        /// The virtual path.
-        /// </param>
+        /// <param name="virtualPath">The virtual path. </param>
         public LessBundle(string virtualPath)
             : this(virtualPath, null)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LessBundle"/> class.
+        ///     Initializes a new instance of the <see cref="LessBundle" /> class.
         /// </summary>
-        /// <param name="virtualPath">
-        /// The virtual path.
-        /// </param>
-        /// <param name="cdnPath">
-        /// The CDN path.
-        /// </param>
+        /// <param name="virtualPath"> The virtual path. </param>
+        /// <param name="cdnPath"> The CDN path. </param>
         public LessBundle(string virtualPath, string cdnPath)
-            : base(virtualPath, cdnPath)
+            : base(virtualPath, cdnPath, new LessTransform(), new CssMinify())
         {
-            Transforms.Insert(0, new LessTransform());
-        }
-
-        /// <summary>
-        /// Gets the cache key for the specified bundle context. Takes into account transient files handled by <see cref="VirtualPathProvider"/>.
-        /// </summary>
-        /// <param name="context"><see cref="BundleContext"/> instance.</param>
-        /// <returns>Cache key string.</returns>
-        public override string GetCacheKey(BundleContext context)
-        {
-            var key = base.GetCacheKey(context);
-            var filesKey = this.GetTransientBundleFilesKey(context);
-
-            if (!string.IsNullOrEmpty(filesKey))
-            {
-                key += ":" + filesKey;
-            }
-            return key;
         }
     }
 }
