@@ -7,175 +7,144 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Web.Hosting;
+using dotless.Core;
+using dotless.Core.configuration;
+using dotless.Core.Parser;
+
 namespace System.Web.Optimization
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Web.Hosting;
-    using dotless.Core;
-    using dotless.Core.Abstractions;
-    using dotless.Core.Importers;
-    using dotless.Core.Input;
-    using dotless.Core.Loggers;
-    using dotless.Core.Parser;
-
     /// <summary>
-    /// The less transform.
+    ///     The less transform.
     /// </summary>
     public class LessTransform : IBundleTransform
     {
         /// <summary>
-        /// The process.
+        ///     The process.
         /// </summary>
         /// <param name="context">
-        /// The context.
+        ///     The context.
         /// </param>
-        /// <param name="bundle">
-        /// The bundle.
+        /// <param name="bundleResponse">
+        ///     The bundle response.
         /// </param>
         /// <exception cref="ArgumentNullException">
-        /// Argument NULL Exception
+        ///     Argument NULL Exception
         /// </exception>
-        public void Process(BundleContext context, BundleResponse bundle)
+        public void Process(BundleContext context, BundleResponse bundleResponse)
         {
             if (context == null)
             {
                 throw new ArgumentNullException("context");
             }
 
-            if (bundle == null)
+            if (bundleResponse == null)
             {
-                throw new ArgumentNullException("bundle");
+                throw new ArgumentNullException("bundleResponse");
             }
 
             context.HttpContext.Response.Cache.SetLastModifiedFromFileDependencies();
 
-            var lessParser = new Parser();
-            var lessEngine = this.CreateLessEngine(lessParser, context);
-
-            var content = new StringBuilder(bundle.Content.Length);
-
-            var bundleFiles = new List<BundleFile>();
-
-            foreach (var bundleFile in bundle.Files)
+            IEnumerable<BundleFile> bundleFiles = bundleResponse.Files;
+            bundleResponse.Content = Process(ref bundleFiles);
+            // set bundle response files back (with imported ones)
+            /*if (context.EnableOptimizations)
             {
-                bundleFiles.Add(bundleFile);
-                var filePath = bundleFile.IncludedVirtualPath;
+                bundleResponse.Files = bundleFiles;
+            }*/
+            bundleResponse.ContentType = "text/css";
+        }
+
+        internal static string Process(ref IEnumerable<BundleFile> files)
+        {
+            DotlessConfiguration lessConfig = new WebConfigConfigurationLoader().GetConfiguration();
+
+            if (!lessConfig.LessSource.GetInterfaces().Contains(typeof (IFileReaderWithResolver)))
+            {
+                lessConfig.LessSource = typeof (LessVirtualFileReader);
+            }
+
+            // system.Web.Optimization cache is used instead
+            lessConfig.CacheEnabled = false;
+
+            ILessEngine lessEngine = LessWeb.GetEngine(lessConfig);
+            LessEngine underlyingLessEngine = lessEngine.ResolveLessEngine();
+            Parser lessParser = underlyingLessEngine.Parser;
+            var content = new StringBuilder();
+
+            var targetFiles = new List<BundleFile>();
+
+            foreach (BundleFile bundleFile in files)
+            {
+                targetFiles.Add(bundleFile);
+                string filePath = bundleFile.IncludedVirtualPath;
                 filePath = filePath.Replace('\\', '/');
-                if (filePath.StartsWith("~"))
+                filePath = VirtualPathUtility.ToAppRelative(filePath);
+
+                lessParser.SetCurrentFilePath(filePath);
+                string source = bundleFile.ApplyTransforms();
+                string extension = VirtualPathUtility.GetExtension(filePath);
+
+                // if plain CSS file, do not transform LESS
+                if (lessConfig.ImportAllFilesAsLess ||
+                    ".less".Equals(extension, StringComparison.InvariantCultureIgnoreCase) ||
+                    ".less.css".Equals(extension, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    filePath = VirtualPathUtility.ToAbsolute(filePath);
+                    string lessOutput = lessEngine.TransformToCss(source, filePath);
+
+                    // pass the transformation result if successful
+                    if (lessEngine.LastTransformationSuccessful)
+                    {
+                        source = lessOutput;
+                    }
+                    else
+                    {
+                        // otherwise write out error message.
+                        // the transformation error is logged in LessEngine.TransformToCss
+                        if (lessConfig.Debug)
+                        {
+                            content.AppendLine(string.Format(
+                                "/* Error occurred in LESS transformation of the file: {0}. Please see details in the dotless log */",
+                                bundleFile.IncludedVirtualPath));
+                        }
+                        continue;
+                    }
                 }
 
-                if (filePath.StartsWith("/"))
-                {
-                    filePath = HostingEnvironment.MapPath(filePath);
-                }
+                content.AppendLine(source);
 
-                this.SetCurrentFilePath(lessParser, filePath);
-                var source = bundleFile.ApplyTransforms();
-                content.Append(lessEngine.TransformToCss(source, filePath));
-                content.AppendLine();
+                BundleFile[] fileDependencies = GetFileDependencies(underlyingLessEngine).ToArray();
+                targetFiles.AddRange(fileDependencies);
 
-                bundleFiles.AddRange(this.GetFileDependencies(lessParser, bundleFile.VirtualFile));
+                DependencyCache.SaveFileDependencies(filePath, fileDependencies.Select(file => file.IncludedVirtualPath).ToArray());
             }
 
-            if (BundleTable.EnableOptimizations)
-            {
-                // include imports in bundle files to register cache dependencies
-                bundle.Files = bundleFiles.Distinct();
-            }
+            // include imports in bundle files to register cache dependencies
+            files = BundleTable.EnableOptimizations ? targetFiles.Distinct() : targetFiles;
 
-            bundle.ContentType = "text/css";
-            bundle.Content = content.ToString();
+            return content.ToString();
         }
 
         /// <summary>
-        /// Creates an instance of LESS engine.
+        ///     Gets the file dependencies (@imports) of the LESS file being parsed.
         /// </summary>
-        /// <param name="lessParser">
-        /// The LESS parser.
-        /// </param>
-        /// <param name="context">
-        /// The bundle context from asp.net    
-        /// </param>
-        /// <returns>
-        /// The <see cref="ILessEngine"/>.
-        /// </returns>
-        private ILessEngine CreateLessEngine(Parser lessParser, BundleContext context)
-        {
-            Logger logger = new NullLogger(LogLevel.Error);
-            if (context.EnableInstrumentation)
-            {
-                logger = new AspNetTraceLogger(LogLevel.Debug, new Http());
-            }
-
-            return new LessEngine(lessParser, logger, context.EnableOptimizations, false);
-        }
-
-        /// <summary>
-        /// Gets the file dependencies (@imports) of the LESS file being parsed.
-        /// </summary>
-        /// <param name="lessParser">The LESS parser.</param>
-        /// <param name="virtualFile">The virtual file</param>
+        /// <param name="lessEngine">The LESS engine.</param>
         /// <returns>An array of file references to the dependent file references.</returns>
-        private IEnumerable<BundleFile> GetFileDependencies(Parser lessParser, VirtualFile virtualFile)
+        private static IEnumerable<BundleFile> GetFileDependencies(LessEngine lessEngine)
         {
-            var pathResolver = this.GetPathResolver(lessParser);
+            ImportedFilePathResolver pathResolver = lessEngine.Parser.GetPathResolver();
+            VirtualPathProvider vpp = BundleTable.VirtualPathProvider;
 
-            foreach (var importPath in lessParser.Importer.Imports)
+            foreach (string resolvedVirtualPath in lessEngine.GetImports().Select(pathResolver.GetFullPath))
             {
-                yield return new BundleFile(pathResolver.GetFullPath(importPath), virtualFile);
+                // the file was successfully imported, therefore no need to check before vpp.GetFile
+                yield return new BundleFile(resolvedVirtualPath, vpp.GetFile(resolvedVirtualPath));
             }
 
-            lessParser.Importer.Imports.Clear();
-        }
-
-        /// <summary>
-        /// Returns an <see cref="IPathResolver"/> instance used by the specified LESS lessParser.
-        /// </summary>
-        /// <param name="lessParser">
-        /// The LESS parser.
-        /// </param>
-        /// <returns>
-        /// The <see cref="IPathResolver"/>.
-        /// </returns>
-        private IPathResolver GetPathResolver(Parser lessParser)
-        {
-            var importer = lessParser.Importer as Importer;
-            if (importer != null)
-            {
-                var fileReader = importer.FileReader as FileReader;
-
-                if (fileReader != null)
-                {
-                    return fileReader.PathResolver;
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Informs the LESS parser about the path to the currently processed file. 
-        /// This is done by using a custom <see cref="IPathResolver"/> implementation.
-        /// </summary>
-        /// <param name="lessParser">The LESS parser.</param>
-        /// <param name="currentFilePath">The path to the currently processed file.</param>
-        private void SetCurrentFilePath(Parser lessParser, string currentFilePath)
-        {
-            var importer = lessParser.Importer as Importer;
-
-            if (importer == null)
-            {
-                throw new InvalidOperationException("Unexpected dotless importer type.");
-            }
-
-            var fileReader = new FileReader(new ImportedFilePathResolver(currentFilePath));
-            importer.FileReader = fileReader;
+            lessEngine.ResetImports();
         }
     }
 }

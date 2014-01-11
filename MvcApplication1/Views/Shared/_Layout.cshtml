@@ -1,28 +1,65 @@
-﻿<!DOCTYPE html>
-<html lang="@System.Threading.Thread.CurrentThread.CurrentCulture.ToString()">
+﻿@using System.Globalization
+@using System.Threading
+@using MvcApplication1
+@using MvcApplication1.DynamicFiles
+
+@{
+	// check if the bootstrap theme is changed
+	var themeName = Request.Form["themename"];
+	if (!string.IsNullOrEmpty(themeName))
+	{
+		DynamicFileVirtualPathProvider.CurrentThemeName = themeName;
+	}
+
+	// set EnableOptimizations value only on form post
+	var useBundling = Request.Form.GetValues("usebundling");
+	if (useBundling != null)
+	{
+		BundleTable.EnableOptimizations = useBundling.First() != "false";
+	}
+
+	// check if the culture is changed
+	var culture = Request.Form["culture"];
+	if (!string.IsNullOrEmpty(culture))
+	{
+		Thread.CurrentThread.CurrentCulture = DynamicFileVirtualPathProvider.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+	}
+}
+
+<!DOCTYPE html>
+<html lang="@Thread.CurrentThread.CurrentCulture.Name">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>@ViewBag.Title</title>
-    @Styles.Render("~/Content/bootstrap")<link href="~/Content/bootstrap-datepicker.css" rel="stylesheet" />
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width" />
+	<title>@ViewBag.Title</title>
+	@Styles.Render(BundleConfig.BOOTSTRAP_STYLES_PATH)
 </head>
 <body>
-    @RenderBody()
+	<form method="POST" id="settings-form">
+		<label for="themename">Theme</label> @Html.DropDownList("themename", Html.GetBootstrapThemeItems())
+		<label for="culture">Culture</label> @Html.DropDownList("culture", Html.GetCultureItems())
+		<label for="usebundling">Enable Bundling and Minification @Html.CheckBox("usebundling", BundleTable.EnableOptimizations)</label>
+	</form>
 
-    @Scripts.Render("~/bundles/jquery")
-    @Scripts.Render("~/bundles/bootstrap")
-    <script src="~/Scripts/jquery.globalize/globalize.js"></script>
-    <script src="~/Scripts/jquery.globalize/cultures/globalize.culture.@(System.Threading.Thread.CurrentThread.CurrentCulture.ToString()).js"></script>
-    <script src="~/Scripts/bootstrap-datepicker.js"></script>
-    <script src="~/Scripts/bootstrap-datepicker-globalize.js"></script>
-    <input type="text" />
+	@RenderBody()
+	
+	<input type="text" name="date" id="date" />
 
-    <script>
-        $(function () {
-            $('input').datepicker();
-        });
-    </script>
+	@Scripts.Render(
+		BundleConfig.JQUERY_PATH,
+		BundleConfig.JQUERY_GLOBALIZE_PATH,
+		BundleConfig.BOOTSTRAP_SCRIPTS_PATH)
+	
+	<script>
+		$(function () {
+			$('#date').datepicker({ language: "@Thread.CurrentThread.CurrentCulture.Name" });
 
-    @RenderSection("scripts", required: false)
+			var form = $('#settings-form');
+			form.on('change', 'input,select', function() {form.submit();});
+		});
+	</script>
+
+	@RenderSection("scripts", required: false)
 </body>
+
 </html>

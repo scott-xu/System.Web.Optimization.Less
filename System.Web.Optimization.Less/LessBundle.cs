@@ -10,32 +10,26 @@
 namespace System.Web.Optimization
 {
     /// <summary>
-    /// The less bundle.
+    ///     The less bundle.
     /// </summary>
-    public class LessBundle : Bundle
+    public class LessBundle : DynamicBundle
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="LessBundle"/> class.
+        ///     Initializes a new instance of the <see cref="LessBundle" /> class.
         /// </summary>
-        /// <param name="virtualPath">
-        /// The virtual path.
-        /// </param>
+        /// <param name="virtualPath">The virtual path. </param>
         public LessBundle(string virtualPath)
-            : base(virtualPath, new IBundleTransform[] { new LessTransform() })
+            : this(virtualPath, null)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LessBundle"/> class.
+        ///     Initializes a new instance of the <see cref="LessBundle" /> class.
         /// </summary>
-        /// <param name="virtualPath">
-        /// The virtual path.
-        /// </param>
-        /// <param name="cdnPath">
-        /// The CDN path.
-        /// </param>
+        /// <param name="virtualPath"> The virtual path. </param>
+        /// <param name="cdnPath"> The CDN path. </param>
         public LessBundle(string virtualPath, string cdnPath)
-            : base(virtualPath, cdnPath, new IBundleTransform[] { new LessTransform() })
+            : base(virtualPath, cdnPath, new LessTransform(), new CssMinify())
         {
         }
     }
