@@ -16,7 +16,8 @@ Dotless relies on `VirtualPathProvider` for getting less file sources. `System.W
 
 ### Transient virtual files
 
-By creating a custom `VirtualPathProvider` it is very easy to implement transient or context dependent *.less* files. For example, it is possible to compile different Bootstrap themes for different clients using the same *less* bundle. See the demo web application where the custom `BootstrapThemeVirtualPathProvider` handles `variables.less` which is imported in the bundled files.
+By creating a custom `VirtualPathProvider` it is very easy to implement transient or context dependent *.less* files. For example, it is possible to compile different Bootstrap themes for different clients using the same *less* bundle. See the demo web application where the custom `DynamicFileVirtualPathProvider` handles `variables.less` which is imported in the bundled files.
+Also, the custom `DynamicFileVirtualPathProvider` provides different `jquery.globalize` culture definitions depending on the current culture.
 
 
 License: <a href="http://opensource.org/licenses/MIT">MIT</a>
