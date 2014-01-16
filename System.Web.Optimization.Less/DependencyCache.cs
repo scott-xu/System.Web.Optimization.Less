@@ -50,8 +50,9 @@ namespace System.Web.Optimization
         /// <summary>
         ///     Returns virtual paths of included files in <paramref name="virtualPath" />  file, according to
         ///     <paramref name="context" />.
-        ///     If not added yet, executes <see cref="Transform.Process" /> for specified <paramref name="bundle" /> and
-        ///     ensures the dependencies are saved.
+        ///     If not added yet and <see cref="LessTransform" /> included in bundle transforms, executes
+        ///     <see cref="LessTransform" /> transformation for the specified <paramref name="bundle" />
+        ///     and ensures the dependencies are saved.
         /// </summary>
         /// <param name="bundle">Bundle to process, if not yet</param>
         /// <param name="virtualPath">Root  file to get dependencies for.</param>
