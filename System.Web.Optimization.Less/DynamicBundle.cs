@@ -7,16 +7,31 @@ namespace System.Web.Optimization
     /// </summary>
     public class DynamicBundle : Bundle
     {
+        /// <summary>
+        ///     Initializes a new instance of <see cref="DynamicBundle" />
+        /// </summary>
+        /// <param name="virtualPath">Virtual path of the bundle</param>
         public DynamicBundle(string virtualPath)
             : this(virtualPath, null)
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of <see cref="DynamicBundle" />
+        /// </summary>
+        /// <param name="virtualPath">Virtual path of the bundle</param>
+        /// <param name="cdnPath">CDN path of the bundle</param>
         public DynamicBundle(string virtualPath, string cdnPath)
             : this(virtualPath, cdnPath, null)
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of <see cref="DynamicBundle" />
+        /// </summary>
+        /// <param name="virtualPath">Virtual path of the bundle</param>
+        /// <param name="cdnPath">CDN path of the bundle</param>
+        /// <param name="transforms">Bundle transforms</param>
         public DynamicBundle(string virtualPath, string cdnPath, params IBundleTransform[] transforms)
             : base(virtualPath, cdnPath, transforms)
         {

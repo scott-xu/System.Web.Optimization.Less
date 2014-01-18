@@ -74,6 +74,7 @@ namespace System.Web.Optimization
             LessEngine underlyingLessEngine = lessEngine.ResolveLessEngine();
             Parser lessParser = underlyingLessEngine.Parser;
             var content = new StringBuilder();
+            var urlRewrite = new CssRewriteUrlTransform();
 
             var targetFiles = new List<BundleFile>();
 
@@ -113,6 +114,8 @@ namespace System.Web.Optimization
                         continue;
                     }
                 }
+
+                source = urlRewrite.Process(bundleFile.IncludedVirtualPath, source);
 
                 content.AppendLine(source);
 

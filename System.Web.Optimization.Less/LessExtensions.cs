@@ -5,6 +5,9 @@ using dotless.Core.Parser;
 
 namespace System.Web.Optimization
 {
+    /// <summary>
+    ///     Specifies dotless related utilities.
+    /// </summary>
     internal static class LessExtensions
     {
         /// <summary>

@@ -5,38 +5,56 @@ namespace System.Web.Optimization
 {
     /// <summary>
     ///     Extends <see cref="IFileReader" /> with features required for resolving virtual file
-    ///     related to the current directory set with <see cref="ImportedFilePathResolver.SetCurrentDirectory" />.
+    ///     related to the current directory set with <see cref="ImportedFilePathResolver.CurrentDirectory" />.
     /// </summary>
     public interface IFileReaderWithResolver : IFileReader
     {
+        /// <summary>
+        ///     Gets or sets <see cref="ImportedFilePathResolver" /> instance set for the current file reader.
+        /// </summary>
         ImportedFilePathResolver PathResolver { get; set; }
     }
 
     /// <summary>
     ///     Implements <see cref="IFileReader" /> with <see cref="IFileReaderWithResolver" /> extension required
     ///     for resolving virtual file related to the current directory set with
-    ///     <see cref="ImportedFilePathResolver.SetCurrentDirectory" />.
+    ///     <see cref="ImportedFilePathResolver.CurrentDirectory" />.
     /// </summary>
     public class LessVirtualFileReader : IFileReaderWithResolver
     {
         private ImportedFilePathResolver _pathResolver;
 
+        /// <summary>
+        ///     Initializes a new instance of <see cref="LessVirtualFileReader" />
+        /// </summary>
         public LessVirtualFileReader()
             : this(new ImportedFilePathResolver())
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of <see cref="LessVirtualFileReader" />
+        /// </summary>
         protected LessVirtualFileReader(ImportedFilePathResolver pathResolver)
         {
             PathResolver = pathResolver;
         }
 
+        /// <summary>
+        ///     Returns <c>true</c> if the file exists.
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
         public virtual bool DoesFileExist(string fileName)
         {
             fileName = _pathResolver.GetFullPath(fileName);
             return BundleTable.VirtualPathProvider.FileExists(fileName);
         }
 
+        /// <summary>
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
         public virtual string GetFileContents(string fileName)
         {
             fileName = _pathResolver.GetFullPath(fileName);
@@ -46,6 +64,10 @@ namespace System.Web.Optimization
             }
         }
 
+        /// <summary>
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
         public virtual byte[] GetBinaryFileContents(string fileName)
         {
             fileName = _pathResolver.GetFullPath(fileName);
@@ -55,6 +77,11 @@ namespace System.Web.Optimization
             }
         }
 
+        /// <summary>
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         protected static byte[] GetBytes(Stream stream)
         {
             if (stream == null)
@@ -87,11 +114,14 @@ namespace System.Web.Optimization
             }
         }
 
-        public bool UseCacheDependencies
+        bool IFileReader.UseCacheDependencies
         {
             get { return false; }
         }
 
+        /// <summary>
+        ///     Gets or sets <see cref="ImportedFilePathResolver" /> instance set for the current file reader.
+        /// </summary>
         public ImportedFilePathResolver PathResolver
         {
             get { return _pathResolver; }
