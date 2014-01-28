@@ -44,7 +44,8 @@ namespace MvcApplication1
             bundles.Add(new LessBundle(BOOTSTRAP_STYLES_PATH).Include(
                 "~/Content/less/bootstrap.less",
                 //"~/Content/less/responsive.less",
-                "~/Content/bootstrap-datepicker.css"));
+                "~/Content/bootstrap-datepicker.css",
+				"~/Content/page.less"));
         }
     }
 }

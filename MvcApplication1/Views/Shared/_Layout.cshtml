@@ -1,5 +1,7 @@
 ﻿@using System.Globalization
 @using System.Threading
+@using System.Collections
+@using System.Collections.Generic
 @using MvcApplication1
 @using MvcApplication1.DynamicFiles
 
@@ -9,6 +11,18 @@
 	if (!string.IsNullOrEmpty(themeName))
 	{
 		DynamicFileVirtualPathProvider.CurrentThemeName = themeName;
+	}
+	
+	if (Request.Form["resetcache"] != null){
+		var cache = Context.Cache;
+		cache
+			.Cast<DictionaryEntry>()
+			.Select(entry => entry.Key)
+			.Cast<string>()
+			.Where(key => key.StartsWith("System.Web.Optimization.Bundle:"))
+			.ToArray()
+			.Select(key => cache.Remove(key))
+			.ToArray();
 	}
 
 	// set EnableOptimizations value only on form post
@@ -39,13 +53,14 @@
 		<label for="themename">Theme</label> @Html.DropDownList("themename", Html.GetBootstrapThemeItems())
 		<label for="culture">Culture</label> @Html.DropDownList("culture", Html.GetCultureItems())
 		<label for="usebundling">Enable Bundling and Minification @Html.CheckBox("usebundling", BundleTable.EnableOptimizations)</label>
+		<button name="resetcache">Reset Bundle Cache</button>
 	</form>
 
 	@RenderBody()
 	
 	<input type="text" name="date" id="date" />
-	<br/>
-	<button class="btn-large"><span class="icon-heart"></span> Do you feel the heart?</button>
+	<p><button class="btn-large"><span class="icon-heart"></span> Do you feel the heart? <span class="note">Sprite icon</span></button></p>
+	<p><button class="btn-large fb"><span class="icon"></span> Share <span class="note">Data Uri</span></button></p>
 
 	@Scripts.Render(
 		BundleConfig.JQUERY_PATH,
