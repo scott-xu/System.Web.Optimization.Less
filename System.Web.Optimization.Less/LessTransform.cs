@@ -10,6 +10,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Web.Hosting;
 using dotless.Core;
 using dotless.Core.configuration;
@@ -22,6 +23,12 @@ namespace System.Web.Optimization
     /// </summary>
     public class LessTransform : IBundleTransform
     {
+        private static readonly Regex _cssUrlRuleMatcher = new Regex(@"
+\burl\(                # match CSS url rule opening
+(['""]?)               # after opening single or double quote might follow
+(?<url>[^'""][^\1)]*)  # catch the url starting with anything except quote and not containing optional opening quote char nor closing paren
+\1\)                   # match the optional opening quote and closing paren", RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
+
         /// <summary>
         ///     The process.
         /// </summary>
@@ -74,7 +81,6 @@ namespace System.Web.Optimization
             LessEngine underlyingLessEngine = lessEngine.ResolveLessEngine();
             Parser lessParser = underlyingLessEngine.Parser;
             var content = new StringBuilder();
-            var urlRewrite = new CssRewriteUrlTransform();
 
             var targetFiles = new List<BundleFile>();
 
@@ -115,7 +121,7 @@ namespace System.Web.Optimization
                     }
                 }
 
-                source = urlRewrite.Process(bundleFile.IncludedVirtualPath, source);
+                source = ConvertUrlsToAbsolute(bundleFile.IncludedVirtualPath, source);
 
                 content.AppendLine(source);
 
@@ -129,6 +135,37 @@ namespace System.Web.Optimization
             files = BundleTable.EnableOptimizations ? targetFiles.Distinct() : targetFiles;
 
             return content.ToString();
+        }
+
+        /// <summary>
+        ///     Transforms all url rules in <paramref name="content" /> that are not Data URI to absolute.
+        ///     We cannot use <see cref="CssRewriteUrlTransform" /> because it has a bug - it screwes up data uri and virtual
+        ///     directory based urls.
+        /// </summary>
+        /// <param name="cssFilePath">File path of the file being bundled</param>
+        /// <param name="content">The file content to replace URLs in</param>
+		/// <exception cref="HttpException">Cannot make an absolute path from '<paramref name="cssFilePath"/>' file location to URL in <paramref name="content"/></exception>
+        private static string ConvertUrlsToAbsolute(string cssFilePath, string content)
+        {
+            string basePath = VirtualPathUtility.AppendTrailingSlash(VirtualPathUtility.GetDirectory(VirtualPathUtility.ToAbsolute(cssFilePath)));
+
+            return _cssUrlRuleMatcher.Replace(content, match =>
+            {
+                string url = match.Groups["url"].Value;
+                if (!string.IsNullOrWhiteSpace(url) && !url.StartsWith("data:"))
+                {
+                    try
+                    {
+                        url = VirtualPathUtility.Combine(basePath, url);
+                    }
+                    catch (Exception ex)
+                    {
+						throw new HttpException(string.Format(
+                            "Cannot make an absolute path from '{0}' file location to '{1}'", cssFilePath, url), ex);
+                    }
+                }
+                return string.Concat("url(", url, ")");
+            });
         }
 
         /// <summary>
