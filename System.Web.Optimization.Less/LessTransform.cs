@@ -152,7 +152,7 @@ namespace System.Web.Optimization
             return _cssUrlRuleMatcher.Replace(content, match =>
             {
                 string url = match.Groups["url"].Value;
-                if (!string.IsNullOrWhiteSpace(url) && !url.StartsWith("data:"))
+                if (!string.IsNullOrWhiteSpace(url) && !url.StartsWith("data:") && !url.StartsWith("//") && !url.StartsWith("http://") && !url.StartsWith("https://"))
                 {
                     try
                     {
