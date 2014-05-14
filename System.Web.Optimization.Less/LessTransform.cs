@@ -57,11 +57,13 @@ namespace System.Web.Optimization
 
             IEnumerable<BundleFile> bundleFiles = bundleResponse.Files;
             bundleResponse.Content = Process(ref bundleFiles);
+
             // set bundle response files back (with imported ones)
-            /*if (context.EnableOptimizations)
+            if (context.EnableOptimizations)
             {
                 bundleResponse.Files = bundleFiles;
-            }*/
+            }
+
             bundleResponse.ContentType = "text/css";
         }
 
