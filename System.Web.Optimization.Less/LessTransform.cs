@@ -79,15 +79,18 @@ namespace System.Web.Optimization
             // system.Web.Optimization cache is used instead
             lessConfig.CacheEnabled = false;
 
-            ILessEngine lessEngine = LessWeb.GetEngine(lessConfig);
-            LessEngine underlyingLessEngine = lessEngine.ResolveLessEngine();
-            Parser lessParser = underlyingLessEngine.Parser;
             var content = new StringBuilder();
 
             var targetFiles = new List<BundleFile>();
 
             foreach (BundleFile bundleFile in files)
             {
+                // initialize the less engine once for each file.
+                // this is to prevent leaking state between files
+                ILessEngine lessEngine = LessWeb.GetEngine(lessConfig);
+                LessEngine underlyingLessEngine = lessEngine.ResolveLessEngine();
+                Parser lessParser = underlyingLessEngine.Parser;
+
                 targetFiles.Add(bundleFile);
                 string filePath = bundleFile.IncludedVirtualPath;
                 filePath = filePath.Replace('\\', '/');
